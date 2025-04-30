@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal Nilai Rapor - SMP Negeri 1 Sukasada</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+    
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f8fafc;
+    }
+    
+    .loading-spinner {
+      width: 24px;
+      height: 24px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .btn-semester.active {
+      background-color: #3b82f6;
+      color: white;
+    }
+    
+    .toast {
+      animation: fadeIn 0.3s, fadeOut 0.3s 2.7s;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes fadeOut {
+      from { opacity: 1; transform: translateY(0); }
+      to { opacity: 0; transform: translateY(20px); }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+  <!-- Header -->
+  <header class="bg-blue-600 text-white shadow-lg">
+    <div class="container mx-auto px-4 py-6">
+      <div class="flex flex-col md:flex-row items-center justify-between">
+        <div class="flex items-center mb-4 md:mb-0">
+          <div>
+            <h1 class="text-2xl font-bold">SMP Negeri 1 Sukasada</h1>
+            <p class="text-blue-100">Portal Nilai Rapor Siswa</p>
+          </div>
+        </div>
+        <div class="bg-blue-500 px-4 py-2 rounded-lg">
+          <p class="text-sm"><i class="fas fa-info-circle mr-2"></i>Tahun Ajaran 2024/2025</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-grow container mx-auto px-4 py-8">
+    <!-- Notification Toast (hidden by default) -->
+    <div id="toast" class="toast fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg hidden">
+      <div class="flex items-center">
+        <i class="fas fa-check-circle mr-2"></i>
+        <span id="toast-message"></span>
+      </div>
+    </div>
+
+    <!-- Important Note -->
+    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-8 rounded-r-lg">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <i class="fas fa-exclamation-circle text-yellow-400 mt-1 mr-3"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-medium text-yellow-800">Catatan Penting</h3>
+          <div class="mt-1 text-sm text-yellow-700">
+            <p>Pastikan Anda telah menyiapkan data nilai rapor untuk <strong>Semester 1 sampai 5</strong> pada sistem atau dokumen yang valid untuk mencocokkan nilai yang ditampilkan pada portal ini.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search Section -->
+    <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">Cari Nilai Rapor</h2>
+      <div class="flex flex-col sm:flex-row gap-4">
+        <div class="flex-grow">
+          <label for="nisnInput" class="block text-sm font-medium text-gray-700 mb-1">Masukkan NISN Anda</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i class="fas fa-id-card text-gray-400"></i>
+            </div>
+            <input 
+              type="text" 
+              id="nisnInput" 
+              placeholder="Contoh: 1234567890" 
+              class="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 py-2 px-4 border"
+              onkeypress="if(event.keyCode == 13) cariData()">
+          </div>
+        </div>
+        <div class="flex items-end">
+          <button 
+            id="searchBtn"
+            onclick="cariData()" 
+            class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition duration-200 flex items-center">
+            <span id="searchText">Cari</span>
+            <span id="searchLoading" class="hidden ml-2">
+              <div class="loading-spinner"></div>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Student Identity -->
+    <div id="hasil-identitas" class="mb-8"></div>
+
+    <!-- Semester Buttons -->
+    <div id="semester-buttons" class="hidden mb-8">
+      <h3 class="text-lg font-medium text-gray-800 mb-4">Pilih Semester</h3>
+      <div class="flex flex-wrap gap-2">
+        <!-- Buttons will be added dynamically -->
+      </div>
+    </div>
+
+    <!-- Semester Results -->
+    <div id="hasil-semester" class="bg-white rounded-xl shadow-md overflow-hidden">
+      <!-- Content will be added dynamically -->
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 text-white py-6">
+    <div class="container mx-auto px-4 text-center">
+      <p class="text-sm">© 2025 | SMP Negeri 1 Sukasada | Gede Pujana</p>
+    </div>
+  </footer>
+
+  <script>
+    const sheetID = '1UQ7J7lj2PW28q2RATzCURGvy5muCbPmZkrp8ONw3fZc';
+    const url = 'https://docs.google.com/spreadsheets/d/' + sheetID + '/gviz/tq?tqx=out:json&sheet=Sheet1';
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      const toastMessage = document.getElementById('toast-message');
+      
+      toastMessage.textContent = message;
+      toast.classList.remove('hidden');
+      
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3000);
+    }
+
+    function cariData() {
+      const nisn = document.getElementById("nisnInput").value.trim();
+      if (!nisn) {
+        showToast("Silakan masukkan NISN.");
+        return;
+      }
+
+      // Show loading state
+      document.getElementById('searchText').classList.add('hidden');
+      document.getElementById('searchLoading').classList.remove('hidden');
+      document.getElementById('searchBtn').disabled = true;
+
+      fetch(url)
+        .then(res => res.text())
+        .then(rep => {
+          const json = JSON.parse(rep.substr(47).slice(0, -2));
+          const cols = json.table.cols.map(col => col.label);
+          const rows = json.table.rows.map(row => row.c.map(cell => cell ? cell.v : ""));
+
+          const hasil = rows.find(r => r[2] === nisn);
+          if (!hasil) {
+            document.getElementById("hasil-identitas").innerHTML = `
+              <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
+                <div class="flex">
+                  <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-circle text-red-400 mt-1 mr-3"></i>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-medium text-red-800">NISN tidak ditemukan</h3>
+                    <div class="mt-1 text-sm text-red-700">
+                      <p>NISN yang Anda masukkan tidak terdaftar dalam sistem kami. Silakan periksa kembali.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>`;
+            document.getElementById("semester-buttons").classList.add("hidden");
+            document.getElementById("hasil-semester").innerHTML = "";
+            showToast("NISN tidak ditemukan");
+            return;
+          }
+
+          const nama = hasil[3];
+          const kelas = hasil[1] || '-';
+
+          document.getElementById("hasil-identitas").innerHTML = `
+            <div class="bg-white rounded-xl shadow-md p-6">
+              <h3 class="text-lg font-semibold text-gray-800 mb-4">Identitas Siswa</h3>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <p class="text-sm text-gray-500">Nama Lengkap</p>
+                  <p class="font-medium">${nama}</p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500">NISN</p>
+                  <p class="font-medium">${nisn}</p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500">Kelas</p>
+                  <p class="font-medium">${kelas}</p>
+                </div>
+              </div>
+            </div>`;
+            
+          document.getElementById("semester-buttons").classList.remove("hidden");
+          window.dataSiswa = { nama, nisn, hasil, cols };
+
+          // Create semester buttons
+          const buttonsHTML = ['7.1', '7.2', '8.1', '8.2', '9.1'].map(smt =>
+            `<button onclick="tampilkanSemester('${smt}')" 
+              class="btn-semester bg-gray-100 hover:bg-blue-100 text-gray-800 font-medium py-2 px-4 rounded-lg transition duration-200">
+              Semester ${smt}
+            </button>`
+          ).join("");
+          document.getElementById("semester-buttons").querySelector('.flex').innerHTML = buttonsHTML;
+
+          // Show first semester by default
+          tampilkanSemester('7.1');
+          showToast("Data ditemukan");
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showToast("Berhasil memuat data");
+        })
+        .finally(() => {
+          // Reset loading state
+          document.getElementById('searchText').classList.remove('hidden');
+          document.getElementById('searchLoading').classList.add('hidden');
+          document.getElementById('searchBtn').disabled = false;
+        });
+    }
+
+    function tampilkanSemester(semester) {
+      const { hasil, cols, nama, nisn } = window.dataSiswa;
+
+      // Set active button
+      document.querySelectorAll('.btn-semester').forEach(btn => {
+        btn.classList.remove('active', 'bg-blue-600', 'text-white');
+        btn.classList.add('bg-gray-100', 'text-gray-800');
+      });
+      event.target.classList.add('active', 'bg-blue-600', 'text-white');
+      event.target.classList.remove('bg-gray-100', 'text-gray-800');
+
+      // Show loading state
+      const hasilSemester = document.getElementById("hasil-semester");
+      hasilSemester.innerHTML = `
+        <div class="p-8 text-center">
+          <div class="inline-block">
+            <div class="loading-spinner mx-auto" style="width: 40px; height: 40px; border-width: 4px;"></div>
+          </div>
+          <p class="mt-4 text-gray-600">Memuat data semester...</p>
+        </div>`;
+
+      // Simulate loading delay for better UX
+      setTimeout(() => {
+        let html = `
+          <div class="p-6">
+            <div class="flex justify-between items-center mb-6">
+              <h3 class="text-xl font-semibold text-gray-800">Nilai Semester ${semester}</h3>
+              <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                ${semester.startsWith('7') ? 'Kelas 7' : semester.startsWith('8') ? 'Kelas 8' : 'Kelas 9'}
+              </span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm text-left text-gray-500">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                  <tr>
+                    <th scope="col" class="px-6 py-3">Mata Pelajaran</th>
+                    <th scope="col" class="px-6 py-3">Nilai</th>
+                  </tr>
+                </thead>
+                <tbody>`;
+
+        let foundSubjects = false;
+        for (let i = 4; i < cols.length; i++) {
+          if (cols[i].includes(semester)) {
+            foundSubjects = true;
+            const subjectName = cols[i].replace(` ${semester}`, '');
+            const nilai = hasil[i] || '-';
+            
+            // Add color based on score (example)
+            let nilaiClass = '';
+            if (nilai >= 85) nilaiClass = 'text-green-600 font-medium';
+            else if (nilai >= 70) nilaiClass = 'text-blue-600';
+            else if (nilai < 70 && nilai !== '-') nilaiClass = 'text-yellow-600';
+            
+            html += `
+              <tr class="bg-white border-b hover:bg-gray-50">
+                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">${subjectName}</td>
+                <td class="px-6 py-4 ${nilaiClass}">${nilai}</td>
+              </tr>`;
+          }
+        }
+
+        if (!foundSubjects) {
+          html += `
+            <tr class="bg-white border-b">
+              <td colspan="2" class="px-6 py-4 text-center text-gray-500">
+                Data nilai untuk semester ini belum tersedia
+              </td>
+            </tr>`;
+        }
+
+        html += `</tbody></table></div>`;
+
+        // Pre-filled Google Form link
+        const formURL = "https://docs.google.com/forms/d/e/1FAIpQLSfuZOn4hhO4X2O0OZ3zL-eVLfzzfwPmaKPLa1xjjZZwmQtWZg/viewform?usp=pp_url"
+                      + "&entry.1234567890=" + encodeURIComponent(nisn)
+                      + "&entry.0987654321=" + encodeURIComponent(nama);
+
+        html += `
+          <div class="mt-6 flex justify-end">
+            <a href="${formURL}" target="_blank" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-lg transition duration-200 inline-flex items-center">
+              <i class="fas fa-check-circle mr-2"></i> Konfirmasi Nilai
+            </a>
+          </div>
+        </div>`;
+
+        hasilSemester.innerHTML = html;
+        showToast(`Data semester ${semester} dimuat`);
+      }, 800); // Simulated loading delay
+    }
+  </script>
+</body>
+</html>
